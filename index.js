@@ -3,10 +3,7 @@
 //
 // CONFIG
 //
-const texSize = 1024;
-const basePixelsPerUnit = 4;
-const tileSize = texSize / basePixelsPerUnit;
-const extraMaxZoom = 2;
+const extraMaxZoom = 3;
 const tileBackend = "data";
 const metaBackend = tileBackend;
 
@@ -38,19 +35,24 @@ function resetMap() {
 }
 
 function addMainTileLayer(sceneData) {
+    const tileSize = sceneData.texSize / sceneData.basePixelsPerUnit;
+    const boundsSize = tileSize / (1 << sceneData.minZoom);
+    const bounds = L.latLngBounds(L.latLng(-boundsSize + 1, 0), L.latLng(0, boundsSize - 1));
     sceneLayers.push(L.tileLayer('{tileBackend}/{sceneFilename}/tile-{z}-{x}.{y}.jpg', {
         attribution: `${sceneData.name} (${sceneData.id})`,
-        minNativeZoom: 0,
+        minNativeZoom: sceneData.minZoom,
         maxNativeZoom: sceneData.maxZoom,
         tileSize,
         noWrap: true,
         keepBuffer: 4,
         sceneFilename: sceneData.filename,
         tileBackend,
+        bounds: L.latLngBounds(L.latLng(-boundsSize, 0), L.latLng(0, boundsSize))
     }).addTo(mymap));
     mymap
+        .setMinZoom(sceneData.minZoom)
         .setMaxZoom(sceneData.maxZoom + extraMaxZoom)
-        .setView([0, 0], 0);
+        .fitBounds(bounds);
 }
 
 function addNpcAttacks(sceneData) {
@@ -58,7 +60,7 @@ function addNpcAttacks(sceneData) {
     sceneData.triggers.forEach(trigger => {
         if (trigger.type !== 8)
             return;
-        markers.push(L.circle([-(trigger.pos.z - 100.2), trigger.pos.x - 123.8], {
+        markers.push(L.circle([-(trigger.pos.z - sceneData.origin.y), trigger.pos.x - sceneData.origin.x], {
             color: "red",
             fillColor: "#f03",
             fillOpacity: 0.5,
