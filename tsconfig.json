@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "lib": ["ES6", "DOM"],
+        "target": "ES6",
+        "module": "AMD",
+        "outFile": "index.js",
+        "sourceRoot": "src",
+        "sourceMap": true,
+        "removeComments": true
+    },
+    "exclude": [
+        "node_modules",
+        "cdata",
+        "data"
+    ]
+}
