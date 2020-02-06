@@ -10,7 +10,7 @@ import { SceneData } from "SceneData";
 import NpcAttackTrigger from "NpcAttackTrigger";
 import MainTileLayer from "./MainTileLayer";
 
-const MetaBackedn = "https://heimdallr.srvdns.de/zzmapsdata";
+const MetaBackend = "https://heimdallr.srvdns.de/zzmapsdata";
 const BaseLayers: SceneBaseLayerCtor[] = [
     MainTileLayer
 ];
@@ -59,7 +59,7 @@ export = class Scene
     }
 
     public async load(sceneFilename: string): Promise<void> {
-        const response = await fetch(`${MetaBackedn}/${sceneFilename}.json`);
+        const response = await fetch(`${MetaBackend}/${sceneFilename}.json`);
         const sceneData = <SceneData>(await response.json());
         sceneData.filename = sceneFilename;
         this.changeData(sceneData);

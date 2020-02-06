@@ -76,7 +76,7 @@ define("Scene", ["require", "exports", "leaflet", "NpcAttackTrigger", "MainTileL
     L = __importStar(L);
     NpcAttackTrigger_1 = __importDefault(NpcAttackTrigger_1);
     MainTileLayer_1 = __importDefault(MainTileLayer_1);
-    const MetaBackedn = "https://heimdallr.srvdns.de/zzmapsdata";
+    const MetaBackend = "https://heimdallr.srvdns.de/zzmapsdata";
     const BaseLayers = [
         MainTileLayer_1.default
     ];
@@ -116,7 +116,7 @@ define("Scene", ["require", "exports", "leaflet", "NpcAttackTrigger", "MainTileL
         }
         load(sceneFilename) {
             return __awaiter(this, void 0, void 0, function* () {
-                const response = yield fetch(`${MetaBackedn}/${sceneFilename}.json`);
+                const response = yield fetch(`${MetaBackend}/${sceneFilename}.json`);
                 const sceneData = (yield response.json());
                 sceneData.filename = sceneFilename;
                 this.changeData(sceneData);
