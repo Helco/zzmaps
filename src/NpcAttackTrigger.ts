@@ -119,7 +119,7 @@ export = class NpcTriggerOverlay implements SceneOverlay {
 
     private createTooltipHTML(trigger: AttackTrigger): string {
         return "" + // stupid javascript
-            (trigger.chance === SHELL_CHANCE ? "Shell " : `${trigger.chance}% | `) +
+            (trigger.chance === SHELL_CHANCE ? "Shell | " : `${trigger.chance}% | `) +
             trigger.fairies.map(f => this.db.fairies[f.id].name).join(", ") +
             ` | Lvl: ${trigger.levelRange.min} - ${trigger.levelRange.max}`;
     }
