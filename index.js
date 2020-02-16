@@ -51,23 +51,103 @@ define("MainTileLayer", ["require", "exports", "leaflet"], function (require, ex
 define("NpcAttackTrigger", ["require", "exports", "leaflet"], function (require, exports, L) {
     "use strict";
     L = __importStar(L);
+    const popupTemplate = document.querySelector("#tmpl-attack-popup");
+    const itemTemplate = document.querySelector("#tmpl-attack-item");
+    var AttackTriggerType;
+    (function (AttackTriggerType) {
+        AttackTriggerType[AttackTriggerType["Enabled"] = 0] = "Enabled";
+        AttackTriggerType[AttackTriggerType["Shell"] = 1] = "Shell";
+        AttackTriggerType[AttackTriggerType["Disabled"] = 2] = "Disabled";
+        AttackTriggerType[AttackTriggerType["AlwaysEnabled"] = 3] = "AlwaysEnabled";
+        AttackTriggerType[AttackTriggerType["AlwaysEnabledSnoopy"] = 50] = "AlwaysEnabledSnoopy";
+    })(AttackTriggerType || (AttackTriggerType = {}));
+    const SHELL_CHANCE = -100.0;
+    class AttackTrigger {
+        constructor(db, trigger) {
+            this.pos = trigger.pos;
+            this.radius = trigger.radius;
+            switch (trigger.ii2) {
+                case AttackTriggerType.Enabled:
+                case AttackTriggerType.Disabled:
+                    this.chance = trigger.ii3 === 0 ? 1 : trigger.ii3;
+                    break;
+                case AttackTriggerType.AlwaysEnabled:
+                case AttackTriggerType.AlwaysEnabledSnoopy:
+                    this.chance = 100;
+                    break;
+                case AttackTriggerType.Shell:
+                    this.chance = SHELL_CHANCE;
+                    break;
+                default:
+                    this.chance = NaN;
+            }
+            const group = db.fairyGroups[trigger.ii4];
+            const oneChance = (100 / group.fairies.length) | 0;
+            this.fairies = [];
+            group.fairies.forEach(id => {
+                let entry = this.fairies.find(f => f.id == id);
+                if (entry == null)
+                    this.fairies.push({ id, chance: oneChance });
+                else
+                    entry.chance += oneChance;
+            });
+            const ampl = (group.lrid / 4) | 0;
+            const base = group.lrid - ampl - 1;
+            this.levelRange = {
+                min: base,
+                max: base + ampl - 1
+            };
+        }
+    }
     return class NpcTriggerOverlay {
-        constructor(map, sceneData) {
+        constructor(map, db, sceneData) {
             this.name = "Fairy Attacks";
             this.category = "Triggers";
             this.isEnabledByDefault = true;
             const markers = [];
-            sceneData.triggers.forEach(trigger => {
-                if (trigger.type !== 8)
-                    return;
-                markers.push(L.circle([-(trigger.pos.z - sceneData.origin.y), trigger.pos.x - sceneData.origin.x], {
+            this.db = db;
+            sceneData.triggers
+                .filter(trigger => trigger.type === 8)
+                .map(t => new AttackTrigger(db, t))
+                .forEach(trigger => {
+                const marker = L.circle([-(trigger.pos.z - sceneData.origin.y), trigger.pos.x - sceneData.origin.x], {
                     color: "red",
                     fillColor: "#f03",
                     fillOpacity: 0.5,
                     radius: trigger.radius
-                }));
+                });
+                marker.on("click", () => marker.togglePopup());
+                marker.on("tooltipopen", () => {
+                    if (marker.isPopupOpen())
+                        marker.closeTooltip();
+                });
+                marker.on("popupopen", () => marker.closeTooltip());
+                marker.bindPopup(this.createPopupHTML(trigger));
+                marker.bindTooltip(this.createTooltipHTML(trigger));
+                markers.push(marker);
             });
             this.layer = L.layerGroup(markers);
+        }
+        createPopupHTML(trigger) {
+            let title = "Attack Trigger " +
+                (trigger.chance === SHELL_CHANCE ? "Shell " : `${trigger.chance}% `) +
+                `Levels: ${trigger.levelRange.min} - ${trigger.levelRange.max}`;
+            return popupTemplate.innerHTML
+                .replace("{TITLE}", title)
+                .replace("{ITEMS}", trigger.fairies.map(f => this.createFairyHTML(f)).join(""));
+        }
+        createFairyHTML(fairy) {
+            return itemTemplate.innerHTML
+                .replace("{TITLE}", this.db.fairies[fairy.id].name)
+                .replace("'{ICONPOS}'", "" + (fairy.id * 40))
+                .replace("{SUBTEXT}", "")
+                .replace("{CHANCE}", fairy.chance + "%");
+        }
+        createTooltipHTML(trigger) {
+            return "" +
+                (trigger.chance === SHELL_CHANCE ? "Shell " : `${trigger.chance}% | `) +
+                trigger.fairies.map(f => this.db.fairies[f.id].name).join(", ") +
+                ` | Lvl: ${trigger.levelRange.min} - ${trigger.levelRange.max}`;
         }
     };
 });
@@ -84,8 +164,9 @@ define("Scene", ["require", "exports", "leaflet", "NpcAttackTrigger", "MainTileL
         NpcAttackTrigger_1.default
     ];
     return class Scene {
-        constructor(divId) {
+        constructor(divId, db) {
             this.sceneLayers = [];
+            this.db = db;
             this.map = L.map(divId, {
                 crs: L.CRS.Simple,
                 maxZoom: 4
@@ -107,7 +188,7 @@ define("Scene", ["require", "exports", "leaflet", "NpcAttackTrigger", "MainTileL
                 l.layer.addTo(this.map);
             });
             OverlayLayers.forEach(OverlayLayerCtor => {
-                var l = new OverlayLayerCtor(this.map, sceneData);
+                var l = new OverlayLayerCtor(this.map, this.db, sceneData);
                 this.sceneLayers.push(l.layer);
                 this.layerControl.addOverlay(l.layer, `${l.category} - ${l.name}`);
                 if (l.isEnabledByDefault)
@@ -138,11 +219,22 @@ define("main", ["require", "exports", "Scene"], function (require, exports, Scen
         }
         return query;
     }
-    let scene = new Scene_1.default("mapid");
-    const query = parseQuery();
-    let sceneFilename = "test";
-    if ("scene" in query)
-        sceneFilename = query.scene;
-    scene.load(sceneFilename);
+    function loadDatabase() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield fetch(`res/db.json`);
+            return (yield response.json());
+        });
+    }
+    let scene = null;
+    let database = null;
+    (() => __awaiter(void 0, void 0, void 0, function* () {
+        database = yield loadDatabase();
+        scene = new Scene_1.default("mapid", database);
+        const query = parseQuery();
+        let sceneFilename = "sc_2421";
+        if ("scene" in query)
+            sceneFilename = query.scene;
+        scene.load(sceneFilename);
+    }))();
 });
 //# sourceMappingURL=index.js.map

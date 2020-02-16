@@ -9,6 +9,7 @@ import { SceneData } from "SceneData";
 
 import NpcAttackTrigger from "NpcAttackTrigger";
 import MainTileLayer from "./MainTileLayer";
+import { Database } from "./Database";
 
 const MetaBackend = "https://heimdallr.srvdns.de/zzmapsdata";
 const BaseLayers: SceneBaseLayerCtor[] = [
@@ -21,11 +22,13 @@ const OverlayLayers: SceneOverlayCtor[] = [
 export = class Scene
 {
     readonly map: L.Map;
+    readonly db: Database;
     readonly layerControl: L.Control.Layers;
     sceneLayers: L.Layer[] = [];
 
-    constructor(divId: string)
+    constructor(divId: string, db: Database)
     {
+        this.db = db;
         this.map = L.map(divId, {
             crs: L.CRS.Simple,
             maxZoom: 4
@@ -50,7 +53,7 @@ export = class Scene
             l.layer.addTo(this.map);
         });
         OverlayLayers.forEach(OverlayLayerCtor => {
-            var l = new OverlayLayerCtor(this.map, sceneData);
+            var l = new OverlayLayerCtor(this.map, this.db, sceneData);
             this.sceneLayers.push(l.layer);
             this.layerControl.addOverlay(l.layer, `${l.category} - ${l.name}`);
             if (l.isEnabledByDefault)

@@ -9,5 +9,8 @@
     },
     "scripts": {
         "build": "tsc -p ."
+    },
+    "dependencies": {
+        "@types/node": "^13.7.0"
     }
 }

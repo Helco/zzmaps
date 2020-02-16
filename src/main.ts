@@ -1,4 +1,5 @@
 import Scene from "Scene";
+import { Database } from "./Database";
 
 function parseQuery(): any {
     // from https://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
@@ -12,13 +13,24 @@ function parseQuery(): any {
     return query;
 }
 
+async function loadDatabase(): Promise<Database>
+{
+    const response = await fetch(`res/db.json`);
+    return <Database>(await response.json());
+}
+
 //
 // STARTUP
 //
-let scene = new Scene("mapid");
+let scene: Scene = null;
+let database: Database = null;
 
-const query = parseQuery();
-let sceneFilename = "test"; // Endeva
-if ("scene" in query)
-    sceneFilename = query.scene;
-scene.load(sceneFilename);
+(async()=>{
+    database = await loadDatabase();
+    scene = new Scene("mapid", database);
+    const query = parseQuery();
+    let sceneFilename = "sc_2421";
+    if ("scene" in query)
+        sceneFilename = query.scene;
+    scene.load(sceneFilename);
+})();

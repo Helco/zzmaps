@@ -7,3 +7,39 @@ html, body, #mapid {
     width: 100vw;
     height: 100%;
 }
+
+.attack-popup-title {
+    text-align: center;
+    font-weight: bold;
+}
+
+.attack-item {
+    display: grid;
+    grid-template-columns: 48px 1fr 4em;
+    margin-top: 8px;
+    margin-left: -16px;
+}
+
+.attack-item>div>header {
+    font-weight: bold;
+    font-size: large;
+}
+
+.attack-item>img {
+    position: relative;
+    left: 50%;
+    top: 50%;
+    transform: translateY(-50%) translateX(-50%);
+    background-image: url(res/wiz000.png);
+    width: 40px;
+    height: 40px;
+    overflow: hidden;
+}
+
+.attack-item-chance {
+    position: relative;
+    line-height: 2em;
+    font-weight: bold;
+    font-size: large;
+    padding-left: 1ex;
+}
