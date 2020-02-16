@@ -2,6 +2,7 @@ import * as L from "leaflet";
 import { SceneOverlay } from "SceneElements";
 import { SceneData, Trigger, Vec3f } from "SceneData";
 import { Database } from "Database";
+import Scene from "Scene";
 
 const popupTemplate = document.querySelector("#tmpl-attack-popup");
 const itemTemplate = document.querySelector("#tmpl-attack-item");
@@ -71,13 +72,13 @@ export = class NpcTriggerOverlay implements SceneOverlay {
     readonly layer: L.Layer;
     readonly db: Database;
 
-    constructor(map: L.Map, db: Database, sceneData: SceneData) {
+    constructor(scene: Scene, sceneData: SceneData) {
         const markers = [];
-        this.db = db;
+        this.db = scene.db;
 
         sceneData.triggers
             .filter(trigger => trigger.type === 8)
-            .map(t => new AttackTrigger(db, t))
+            .map(t => new AttackTrigger(scene.db, t))
             .forEach(trigger => {
                 const marker = L.circle([-(trigger.pos.z - sceneData.origin.y), trigger.pos.x - sceneData.origin.x], {
                     color: "red",

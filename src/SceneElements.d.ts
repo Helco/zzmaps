@@ -1,5 +1,6 @@
 import * as L from "leaflet";
 import { SceneData } from "SceneData";
+import Scene from "Scene";
 import { Database } from "Database";
 
 export interface SceneOverlay {
@@ -10,7 +11,7 @@ export interface SceneOverlay {
 }
 
 export interface SceneOverlayCtor {
-    new(map: L.Map, db: Database, sceneData: SceneData): SceneOverlay
+    new(scene: Scene, sceneData: SceneData): SceneOverlay
 }
 
 export interface SceneBaseLayer {

@@ -29,4 +29,5 @@ export interface Database
     readonly rankedSpellCosts: RankedSpellCost[];
     readonly fairies: Fairy[];
     readonly spells: Spell[];
+    readonly sceneNames: {[id: number]: string};
 }

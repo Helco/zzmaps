@@ -17,37 +17,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-define("SceneElements", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-});
-define("MainTileLayer", ["require", "exports", "leaflet"], function (require, exports, L) {
-    "use strict";
-    L = __importStar(L);
-    const ExtraMaxZoom = 3;
-    const TileBackend = "https://heimdallr.srvdns.de/zzmapsdata";
-    return class MainTileLayer {
-        constructor(map, sceneData) {
-            this.name = "Main";
-            const tileSize = sceneData.texSize / sceneData.basePixelsPerUnit;
-            const boundsSize = tileSize / (1 << sceneData.minZoom);
-            const bounds = L.latLngBounds(L.latLng(-boundsSize + 1, 0), L.latLng(0, boundsSize - 1));
-            map
-                .setMinZoom(sceneData.minZoom)
-                .setMaxZoom(sceneData.maxZoom + ExtraMaxZoom)
-                .fitBounds(bounds);
-            this.layer = L.tileLayer(`${TileBackend}/${sceneData.filename}/tile-{z}-{x}.{y}.jpg`, {
-                attribution: `${sceneData.name} (${sceneData.id})`,
-                minNativeZoom: sceneData.minZoom,
-                maxNativeZoom: sceneData.maxZoom,
-                tileSize,
-                noWrap: true,
-                keepBuffer: 4,
-                bounds: L.latLngBounds(L.latLng(-boundsSize, 0), L.latLng(0, boundsSize))
-            });
-        }
-    };
-});
 define("NpcAttackTrigger", ["require", "exports", "leaflet"], function (require, exports, L) {
     "use strict";
     L = __importStar(L);
@@ -100,15 +69,15 @@ define("NpcAttackTrigger", ["require", "exports", "leaflet"], function (require,
         }
     }
     return class NpcTriggerOverlay {
-        constructor(map, db, sceneData) {
+        constructor(scene, sceneData) {
             this.name = "Fairy Attacks";
             this.category = "Triggers";
             this.isEnabledByDefault = true;
             const markers = [];
-            this.db = db;
+            this.db = scene.db;
             sceneData.triggers
                 .filter(trigger => trigger.type === 8)
-                .map(t => new AttackTrigger(db, t))
+                .map(t => new AttackTrigger(scene.db, t))
                 .forEach(trigger => {
                 const marker = L.circle([-(trigger.pos.z - sceneData.origin.y), trigger.pos.x - sceneData.origin.x], {
                     color: "red",
@@ -145,23 +114,52 @@ define("NpcAttackTrigger", ["require", "exports", "leaflet"], function (require,
         }
         createTooltipHTML(trigger) {
             return "" +
-                (trigger.chance === SHELL_CHANCE ? "Shell " : `${trigger.chance}% | `) +
+                (trigger.chance === SHELL_CHANCE ? "Shell | " : `${trigger.chance}% | `) +
                 trigger.fairies.map(f => this.db.fairies[f.id].name).join(", ") +
                 ` | Lvl: ${trigger.levelRange.min} - ${trigger.levelRange.max}`;
         }
     };
 });
-define("Scene", ["require", "exports", "leaflet", "NpcAttackTrigger", "MainTileLayer"], function (require, exports, L, NpcAttackTrigger_1, MainTileLayer_1) {
+define("MainTileLayer", ["require", "exports", "leaflet"], function (require, exports, L) {
+    "use strict";
+    L = __importStar(L);
+    const ExtraMaxZoom = 3;
+    const TileBackend = "https://heimdallr.srvdns.de/zzmapsdata";
+    return class MainTileLayer {
+        constructor(map, sceneData) {
+            this.name = "Main";
+            const tileSize = sceneData.texSize / sceneData.basePixelsPerUnit;
+            const boundsSize = tileSize / (1 << sceneData.minZoom);
+            const bounds = L.latLngBounds(L.latLng(-boundsSize + 1, 0), L.latLng(0, boundsSize - 1));
+            map
+                .setMinZoom(sceneData.minZoom)
+                .setMaxZoom(sceneData.maxZoom + ExtraMaxZoom)
+                .fitBounds(bounds);
+            this.layer = L.tileLayer(`${TileBackend}/${sceneData.filename}/tile-{z}-{x}.{y}.jpg`, {
+                attribution: `${sceneData.name} (${sceneData.id})`,
+                minNativeZoom: sceneData.minZoom,
+                maxNativeZoom: sceneData.maxZoom,
+                tileSize,
+                noWrap: true,
+                keepBuffer: 4,
+                bounds: L.latLngBounds(L.latLng(-boundsSize, 0), L.latLng(0, boundsSize))
+            });
+        }
+    };
+});
+define("Scene", ["require", "exports", "leaflet", "NpcAttackTrigger", "DoorwayTrigger", "MainTileLayer"], function (require, exports, L, NpcAttackTrigger_1, DoorwayTrigger_1, MainTileLayer_1) {
     "use strict";
     L = __importStar(L);
     NpcAttackTrigger_1 = __importDefault(NpcAttackTrigger_1);
+    DoorwayTrigger_1 = __importDefault(DoorwayTrigger_1);
     MainTileLayer_1 = __importDefault(MainTileLayer_1);
     const MetaBackend = "https://heimdallr.srvdns.de/zzmapsdata";
     const BaseLayers = [
         MainTileLayer_1.default
     ];
     const OverlayLayers = [
-        NpcAttackTrigger_1.default
+        NpcAttackTrigger_1.default,
+        DoorwayTrigger_1.default
     ];
     return class Scene {
         constructor(divId, db) {
@@ -173,10 +171,11 @@ define("Scene", ["require", "exports", "leaflet", "NpcAttackTrigger", "MainTileL
             });
             this.layerControl = L.control.layers();
             this.layerControl.addTo(this.map);
+            window.onpopstate = ev => ev.state && this.load(ev.state.scene);
         }
         reset() {
-            this.sceneLayers.forEach(this.layerControl.removeLayer);
-            this.sceneLayers.forEach(this.map.removeLayer);
+            this.sceneLayers.forEach(l => this.layerControl.removeLayer(l));
+            this.sceneLayers.forEach(l => this.map.removeLayer(l));
             this.sceneLayers = [];
         }
         changeData(sceneData) {
@@ -188,7 +187,7 @@ define("Scene", ["require", "exports", "leaflet", "NpcAttackTrigger", "MainTileL
                 l.layer.addTo(this.map);
             });
             OverlayLayers.forEach(OverlayLayerCtor => {
-                var l = new OverlayLayerCtor(this.map, this.db, sceneData);
+                var l = new OverlayLayerCtor(this, sceneData);
                 this.sceneLayers.push(l.layer);
                 this.layerControl.addOverlay(l.layer, `${l.category} - ${l.name}`);
                 if (l.isEnabledByDefault)
@@ -202,6 +201,60 @@ define("Scene", ["require", "exports", "leaflet", "NpcAttackTrigger", "MainTileL
                 sceneData.filename = sceneFilename;
                 this.changeData(sceneData);
             });
+        }
+        goto(sceneIdentifier) {
+            return __awaiter(this, void 0, void 0, function* () {
+                if (typeof sceneIdentifier === "number")
+                    sceneIdentifier = "sc_" + (sceneIdentifier < 1000 ? "0" : "") + sceneIdentifier;
+                const newURL = new URL(window.location.href);
+                newURL.searchParams.set("scene", sceneIdentifier);
+                history.pushState({ scene: sceneIdentifier }, null, newURL.href);
+                yield this.load(sceneIdentifier);
+            });
+        }
+    };
+});
+define("DoorwayTrigger", ["require", "exports", "leaflet"], function (require, exports, L) {
+    "use strict";
+    L = __importStar(L);
+    const popupTemplate = document.querySelector("#tmpl-doorway-popup");
+    return class DoorwayTriggerOverlay {
+        constructor(scene, sceneData) {
+            this.name = "Doorways";
+            this.category = "Triggers";
+            this.isEnabledByDefault = true;
+            const markers = [];
+            this.scene = scene;
+            sceneData.triggers
+                .filter(trigger => trigger.type === 0)
+                .forEach(trigger => {
+                const marker = L.circle([-(trigger.pos.z - sceneData.origin.y), trigger.pos.x - sceneData.origin.x], {
+                    color: "green",
+                    fillColor: "#00d000",
+                    fillOpacity: 0.3,
+                    radius: trigger.radius
+                });
+                marker.on("click", () => marker.togglePopup());
+                marker.on("tooltipopen", () => {
+                    if (marker.isPopupOpen())
+                        marker.closeTooltip();
+                });
+                marker.on("popupopen", () => marker.closeTooltip());
+                marker.bindPopup(this.createPopupHTML(trigger));
+                marker.bindTooltip(this.createTooltipHTML(trigger));
+                markers.push(marker);
+            });
+            this.layer = L.layerGroup(markers);
+        }
+        createPopupHTML(trigger) {
+            const element = popupTemplate.firstElementChild.cloneNode(true);
+            element.innerHTML = element.innerHTML.replace("{TITLE}", this.createTooltipHTML(trigger));
+            const button = element.querySelector("button");
+            button.onclick = () => this.scene.goto(trigger.ii3);
+            return element;
+        }
+        createTooltipHTML(trigger) {
+            return `Doorway to "${this.scene.db.sceneNames[trigger.ii3]}" (${trigger.ii3})`;
         }
     };
 });

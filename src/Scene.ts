@@ -8,6 +8,7 @@ import {
 import { SceneData } from "SceneData";
 
 import NpcAttackTrigger from "NpcAttackTrigger";
+import DoorwayTrigger from "DoorwayTrigger";
 import MainTileLayer from "./MainTileLayer";
 import { Database } from "./Database";
 
@@ -16,7 +17,8 @@ const BaseLayers: SceneBaseLayerCtor[] = [
     MainTileLayer
 ];
 const OverlayLayers: SceneOverlayCtor[] = [
-    NpcAttackTrigger
+    NpcAttackTrigger,
+    DoorwayTrigger
 ];
 
 export = class Scene
@@ -35,11 +37,13 @@ export = class Scene
         });
         this.layerControl = L.control.layers();
         this.layerControl.addTo(this.map);
+
+        window.onpopstate = ev => ev.state && this.load(ev.state.scene);
     }
 
     public reset(): void {
-        this.sceneLayers.forEach(this.layerControl.removeLayer);
-        this.sceneLayers.forEach(this.map.removeLayer);
+        this.sceneLayers.forEach(l => this.layerControl.removeLayer(l));
+        this.sceneLayers.forEach(l => this.map.removeLayer(l));
         this.sceneLayers = [];
     }
 
@@ -53,7 +57,7 @@ export = class Scene
             l.layer.addTo(this.map);
         });
         OverlayLayers.forEach(OverlayLayerCtor => {
-            var l = new OverlayLayerCtor(this.map, this.db, sceneData);
+            var l = new OverlayLayerCtor(this, sceneData);
             this.sceneLayers.push(l.layer);
             this.layerControl.addOverlay(l.layer, `${l.category} - ${l.name}`);
             if (l.isEnabledByDefault)
@@ -66,5 +70,15 @@ export = class Scene
         const sceneData = <SceneData>(await response.json());
         sceneData.filename = sceneFilename;
         this.changeData(sceneData);
+    }
+
+    public async goto(sceneIdentifier: string | number): Promise<void> {
+        if (typeof sceneIdentifier === "number")
+            sceneIdentifier = "sc_" + (sceneIdentifier < 1000 ? "0" : "") + sceneIdentifier;
+        
+        const newURL = new URL(window.location.href);
+        newURL.searchParams.set("scene", sceneIdentifier);
+        history.pushState({ scene: sceneIdentifier }, null, newURL.href);
+        await this.load(sceneIdentifier);
     }
 }

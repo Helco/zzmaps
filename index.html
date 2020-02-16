@@ -17,6 +17,36 @@
 
 <body>
   <div id="mapid"></div>
+
+  <!-- Templates -->
+  <div style="display: none">
+    <template id="tmpl-attack-popup">
+      <div class="attack-popup-title">{TITLE}</div>
+      {ITEMS}
+    </template>
+
+    <template id="tmpl-attack-item">
+      <div class="attack-item">
+        <img style="background-position: -'{ICONPOS}'px 0px;"/>
+        <div>
+          <header>{TITLE}</header>
+          {SUBTEXT}
+        </div>
+        <div class="attack-item-chance">
+          {CHANCE}
+        </div>
+      </div>
+    </template>
+
+    <div id="tmpl-doorway-popup">
+      <div class="doorway-popup">
+        {TITLE}<br/>
+        <button>Go to this scene</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script main -->
   <script>
     require.config({
       baseUrl: "",
@@ -28,27 +58,6 @@
       require(["main"]);
     });
   </script>
-
-  <!-- Templates -->
-  <div style="display: none">
-    <div id="tmpl-attack-popup">
-      <div class="attack-popup-title">{TITLE}</div>
-      {ITEMS}
-    </div>
-
-    <div id="tmpl-attack-item">
-      <div class="attack-item">
-        <img style="background-position: -'{ICONPOS}'px 0px;"/>
-        <div>
-          <header>{TITLE}</header>
-          {SUBTEXT}
-        </div>
-        <div class="attack-item-chance">
-          {CHANCE}
-        </div>
-      </div>
-    </div>
-  </div>
 </body>
 
 </html>

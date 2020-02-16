@@ -8,6 +8,11 @@ html, body, #mapid {
     height: 100%;
 }
 
+.doorway-popup {
+    text-align: center;
+    font-weight: bold;
+}
+
 .attack-popup-title {
     text-align: center;
     font-weight: bold;
