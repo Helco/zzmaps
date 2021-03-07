@@ -3,7 +3,7 @@
         "lib": ["ES6", "DOM"],
         "target": "ES6",
         "module": "AMD",
-        "outFile": "index.js",
+        "outFile": "public/index.js",
         "sourceRoot": "src",
         "sourceMap": true,
         "removeComments": true,

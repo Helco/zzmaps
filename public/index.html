@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset='utf-8'>
+  <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+  <title>Zanzarah Map Viewer</title>
+  <meta name='viewport' content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel='stylesheet' type='text/css' media='screen' href='index.css'>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+    crossorigin="" />
+  <script src="https://unpkg.com/requirejs@2.3.5/require.js"
+    integrity="sha384-8Drxd8/j1SlZAUtEeKZGDO/ziAtAG+dm72HKj/DTYXkTRrdcMWuTE6RhW/VtXama" crossorigin=""></script>
+
+</head>
+
+<body>
+  <div id="mapid"></div>
+
+  <!-- Templates -->
+  <div style="display: none">
+    <template id="tmpl-attack-popup">
+      <div class="attack-popup-title">{TITLE}</div>
+      {ITEMS}
+    </template>
+
+    <template id="tmpl-attack-item">
+      <div class="attack-item">
+        <img style="background-position: -'{ICONPOS}'px 0px;"/>
+        <div>
+          <header>{TITLE}</header>
+          {SUBTEXT}
+        </div>
+        <div class="attack-item-chance">
+          {CHANCE}
+        </div>
+      </div>
+    </template>
+
+    <div id="tmpl-doorway-popup">
+      <div class="doorway-popup">
+        {TITLE}<br/>
+        <button>Go to this scene</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script main -->
+  <script>
+    require.config({
+      baseUrl: "",
+      paths: {
+        "leaflet": "https://unpkg.com/leaflet@1.6.0/dist/leaflet"
+      }
+    });
+    require(["index"], function () {
+      require(["main"]);
+    });
+  </script>
+</body>
+
+</html>

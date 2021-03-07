@@ -4,3 +4,4 @@ tdata
 compressData.sh
 node_modules
 resdata
+*.db

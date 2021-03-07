@@ -2,7 +2,7 @@
     "name": "zzmaps",
     "description": "Zanzarah map viewer",
     "authors": "Helco",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "devDependencies": {
         "typescript": "^3.4.3",
         "@types/leaflet": "^1.5.8"
@@ -11,6 +11,10 @@
         "build": "tsc -p ."
     },
     "dependencies": {
-        "@types/node": "^13.7.0"
+        "@types/node": "^13.7.0",
+        "express": "4.17.1",
+        "sqlite": "4.0.19",
+        "sqlite3": "5.0.2",
+        "http-errors": "1.8.0"
     }
 }

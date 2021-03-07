@@ -17,10 +17,10 @@ export = class DoorwayTriggerOverlay implements SceneOverlay {
         const markers = [];
         this.scene = scene;
 
-        sceneData.triggers
+        sceneData.Triggers
             .filter(trigger => trigger.type === 0)
             .forEach(trigger => {
-                const marker = L.circle([-(trigger.pos.z - sceneData.origin.y), trigger.pos.x - sceneData.origin.x], {
+                const marker = L.circle([-(trigger.pos.z - sceneData.MinBounds.z), trigger.pos.x - sceneData.MinBounds.x], {
                     color: "green",
                     fillColor: "#00d000",
                     fillOpacity: 0.3,

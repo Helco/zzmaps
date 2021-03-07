@@ -12,7 +12,8 @@ import DoorwayTrigger from "DoorwayTrigger";
 import MainTileLayer from "./MainTileLayer";
 import { Database } from "./Database";
 
-const MetaBackend = "https://heimdallr.srvdns.de/zzmapsdata";
+//const MetaBackend = "https://heimdallr.srvdns.de/zzmapsdata";
+const MetaBackend = "http://localhost:8000";
 const BaseLayers: SceneBaseLayerCtor[] = [
     MainTileLayer
 ];
@@ -26,11 +27,13 @@ export = class Scene
     readonly map: L.Map;
     readonly db: Database;
     readonly layerControl: L.Control.Layers;
+    readonly divId: string;
     sceneLayers: L.Layer[] = [];
 
     constructor(divId: string, db: Database)
     {
         this.db = db;
+        this.divId = divId;
         this.map = L.map(divId, {
             crs: L.CRS.Simple,
             maxZoom: 4
@@ -50,6 +53,10 @@ export = class Scene
     public changeData(sceneData: SceneData): void {
         this.reset();
         
+        const r = (sceneData.BackgroundColor.r * 255)|0;
+        const g = (sceneData.BackgroundColor.g * 255)|0;
+        const b = (sceneData.BackgroundColor.b * 255)|0;
+        document.getElementById(this.divId).style.backgroundColor = `rgba(${r},${g},${b},1)`;
         BaseLayers.forEach(BaseLayerCtor => {
             var l = new BaseLayerCtor(this.map, sceneData);
             this.sceneLayers.push(l.layer);
@@ -66,9 +73,9 @@ export = class Scene
     }
 
     public async load(sceneFilename: string): Promise<void> {
-        const response = await fetch(`${MetaBackend}/${sceneFilename}.json`);
+        const response = await fetch(`${MetaBackend}/${sceneFilename}/meta.json`);
         const sceneData = <SceneData>(await response.json());
-        sceneData.filename = sceneFilename;
+        sceneData.FileName = sceneFilename;
         this.changeData(sceneData);
     }
 

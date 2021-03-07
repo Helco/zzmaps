@@ -76,11 +76,11 @@ export = class NpcTriggerOverlay implements SceneOverlay {
         const markers = [];
         this.db = scene.db;
 
-        sceneData.triggers
+        sceneData.Triggers
             .filter(trigger => trigger.type === 8)
             .map(t => new AttackTrigger(scene.db, t))
             .forEach(trigger => {
-                const marker = L.circle([-(trigger.pos.z - sceneData.origin.y), trigger.pos.x - sceneData.origin.x], {
+                const marker = L.circle([-(trigger.pos.z - sceneData.MinBounds.z), trigger.pos.x - sceneData.MinBounds.x], {
                     color: "red",
                     fillColor: "#f03",
                     fillOpacity: 0.5,
